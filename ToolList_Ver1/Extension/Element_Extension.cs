@@ -36,7 +36,7 @@ namespace ToolList_Ver1.Extension
             try
             {
                 IWebElement element = wait.Until(ExpectedConditions.ElementIsVisible(by));
-                bool c = element.Displayed && element.Enabled;
+                bool c = element.Enabled;
                 return c;
             }
             catch (WebDriverTimeoutException )

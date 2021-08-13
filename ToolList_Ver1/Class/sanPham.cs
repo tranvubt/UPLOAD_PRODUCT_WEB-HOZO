@@ -43,13 +43,23 @@ namespace ToolList_Ver1.Class
                 string description = item.data.Description;
                 //click button thêm sản phẩm
                 driver.FindElement(By.XPath("/html/body/div[1]/main/div/div/div/div/div[2]/div/div/div/article/div/form/div[1]/div[1]/div[1]/div/div[1]/a"),40).Click();
-                driver.FindElement(By.XPath("//input[starts-with(@id,\"html5\")]")).SendKeys(filePathImage);
+                driver.FindElement(By.XPath("//input[starts-with(@id,\"html5\")]"),60).SendKeys(filePathImage);
+                IWebElement check = driver.FindElement(By.XPath("/html/body/div[12]/div[1]/div/div/div[4]/div/div[2]/button"));
+                while (true)
+                {                    
+                    if (check.Enabled)
+                    {
+                        check.Click();
+                        break;
+                    }
+                }
                 driver.FindElement(By.Id("post-title")).SendKeys(title);
                 driver.FindElement(By.Id("_regular_price")).SendKeys("2.5");
                 driver.FindElement(By.XPath("/html/body/div[1]/main/div/div/div/div/div[2]/div/div/div/article/div/form/div[1]/div[2]/div[4]/span/span[1]/span/ul/li/input"), 10).SendKeys("sub");
                 driver.FindElement(By.XPath("/html/body/div[1]/main/div/div/div/div/div[2]/div/div/div/article/div/form/div[1]/div[2]/div[4]/span/span[1]/span/ul/li/input")).SendKeys(Keys.Enter);
                 addTag(driver, tag);
                 driver.FindElement(By.Id("post_content_ifr")).SendKeys(description);
+                driver.FindElement(By.XPath("/html/body/div[1]/main/div/div/div/div/div[2]/div/div/div/article/div/form/div[3]/button[2]"),40).Click();
                 int a = 2;
             }
         }
