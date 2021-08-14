@@ -14,7 +14,7 @@ namespace ToolList_Ver1.Class
         {
             foreach (System.Collections.DictionaryEntry item in h)
             {
-                if (item.Key.Equals(FileCode))
+                if (item.Key.ToString().Contains(FileCode))
                     data = (DataWTM)item.Value;
             }
         }

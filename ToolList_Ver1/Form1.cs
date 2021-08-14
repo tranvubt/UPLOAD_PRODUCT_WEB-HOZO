@@ -66,14 +66,19 @@ namespace ToolList_Ver1
         //Tự load dataWTM 
         private void getDataWTM()
         {
-            string filePath = @".\.\Data\dataWTM.xlsx";
+            string filePath = @".\.\Data";
+            getTitleandTag(filePath);
+        }
+
+        private void getTitleandTag(string filePath)
+        {            
             GetBindingSourceExcel(filePath);
             if (DataWTMgSource1.Count == 0)
             {
-                OpenFileDialog open = new OpenFileDialog() { Filter = "Excel Workbook|*.xlsx", Multiselect = false, Title = "Chọn File Excel Thông Tin WTM" };
+                FolderBrowserDialog open = new FolderBrowserDialog() { Description = "Chọn Folder Thông Tin WTM" };
                 if (open.ShowDialog() == DialogResult.OK)
                 {
-                    GetBindingSourceExcel(open.FileName);
+                    GetBindingSourceExcel(open.SelectedPath);
                 }
             }
             dtgvDataWTM.DataSource = DataWTMgSource1;
@@ -82,22 +87,29 @@ namespace ToolList_Ver1
                 dtgvDataWTM.Columns[0].AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells;
                 dtgvDataWTM.Columns[3].AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells;
             }
-        }   
+        }
         //Load File excel ra BindingSource và đối tượng
         public void GetBindingSourceExcel(string strFileName)
         {
+            string pathXlm = strFileName + @"\dataWTM.xlsx";
+            string DescapSVG = File.ReadAllText(strFileName+@"\SVG.txt");
+            string DescapPNG = File.ReadAllText(strFileName + @"\PNG.txt");
             try
             {
-                XLWorkbook workbook = new XLWorkbook(strFileName);
+                XLWorkbook workbook = new XLWorkbook(pathXlm);
                 var rows = workbook.Worksheet(1).RowsUsed();
                 foreach (var row in rows)
                 {
                     List<string> temp = new List<string>();
+                    DataWTM t;
                     foreach (IXLCell item in row.Cells())
                     {
                         temp.Add(item.Value.ToString());
-                    }
-                    DataWTM t = new DataWTM(temp[0], temp[1], temp[2], temp[3]);
+                    }                                       
+                    if(temp[0].ToUpper().Contains("PNG"))
+                        t = new DataWTM(temp[0], temp[1], DescapPNG, temp[2]);
+                    else
+                        t= new DataWTM(temp[0], temp[1], DescapSVG, temp[2]);
                     if (!listDataWTM.ContainsKey(temp[0]))
                         listDataWTM.Add(temp[0], t);
                     if (!DataWTMgSource1.Contains(t))
@@ -144,10 +156,10 @@ namespace ToolList_Ver1
         //Button get danh sách sản phẩm 
         private void loadWTM_Click(object sender, EventArgs e)
         {
-            string filePath = "";
+            string filePath = "";            
+            ((DataGridViewComboBoxColumn)dtgvData.Columns["Column4"]).Items.Clear();
             ListSanPham.Clear();
             dtgvWtm.Rows.Clear();
-            ((DataGridViewComboBoxColumn)dtgvData.Columns["Column4"]).Items.Clear();
             FolderBrowserDialog open = new FolderBrowserDialog();
             if (open.ShowDialog() == DialogResult.OK)
             {
@@ -192,8 +204,6 @@ namespace ToolList_Ver1
         //Button Starts
         private void btnStart_Click(object sender, EventArgs e)
         {
-            price = this.txtPrice.Text;
-            quantity = this.txtQuantity.Text;
             this.trackBar1.Enabled = false;
             this.btnStart.Enabled = false;
             backgroundWorker1.RunWorkerAsync();
@@ -324,6 +334,10 @@ namespace ToolList_Ver1
             if (form != null)
                 form.UpdateDgv(id, "", "", h);
         }
-        
+
+        private void dtgvData_DataError(object sender, DataGridViewDataErrorEventArgs e)
+        {
+            e.Cancel = true;
+        }
     }
 }

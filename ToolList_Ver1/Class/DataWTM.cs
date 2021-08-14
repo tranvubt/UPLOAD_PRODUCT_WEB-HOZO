@@ -13,14 +13,7 @@ namespace ToolList_Ver1.Class
         {
             get
             {
-                return "👑 PLEASE READ THE DESCRIPTION 👑\n👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇👇\nMY PAYMENT METHOD IS UPDATING.....PLEASE VISIT MY OTHER SHOP TO ORDER FOR 90% OFF" +
-                  "\nONLY $2.99 WHEN PURCHASING ON OUR WEBSITE. (Only Today !!)." +
-                  "\nWe accept all payment method." +
-                  "\nLink bellow:" + _description +
-                  "\n90% OFF (Only Today !!)" +
-                  "\n* NOTE:" +
-                  "\nDO NOT ORDER AT THIS ETSY SHOP, ALL ORDERS AT THIS SHOP WILL BE CANCELED." +
-                  "\nPLEASE TO CHECK YOUR EMAIL TO KNOW MORE INFORMATION!";
+                return _description;
             }
             set { _description = value; }
         }

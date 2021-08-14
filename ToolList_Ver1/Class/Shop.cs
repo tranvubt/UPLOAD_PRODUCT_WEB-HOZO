@@ -71,13 +71,11 @@ namespace ToolList_Ver1.Class
                 IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
                 switch (Form1.mucDich)
                 {
-                    case true:
-                        driver.Navigate().GoToUrl("https://hozomarket.com/dashboard-2/new-product/");
-                        this.SanPham.listting(driver, getImageList(lstImageCheck), Form1.dangList, Form1.mucDich);
+                    case true:                        
+                        this.SanPham.listting(driver, getImageList(lstImageCheck));
                         break;
                     case false:
-                        driver.Navigate().GoToUrl("https://www.etsy.com/your/shops/me/tools/listings");
-                        this.SanPham.listting(driver, getImageList(lstImageCheck), Form1.dangList, Form1.mucDich);
+                        this.SanPham.listting(driver, getImageList(lstImageCheck));
                         Form1.Log(Name_Profile, "Listed");
                         this.Status = "Listed";
                         Form1.updateStatus(idDgv, Status);
