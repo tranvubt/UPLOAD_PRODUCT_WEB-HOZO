@@ -14,16 +14,20 @@ namespace ToolList_Ver1.Class
         {
             foreach (System.Collections.DictionaryEntry item in h)
             {
-                if (item.Key.ToString().Contains(FileCode))
+                if (item.Key.ToString().ToLower().Contains(FileCode.ToLower()))
+                {
                     data = (DataWTM)item.Value;
+                    this.FileCode = item.Key.ToString();
+                }                    
             }
         }
+
         public void getListImg()
         {
             foreach (string d in System.IO.Directory.GetFiles(filePath))
             {
                 image temp = new image();
-                if (System.Text.RegularExpressions.Regex.IsMatch(d, @".png"))
+                if (System.Text.RegularExpressions.Regex.IsMatch(d, @".png")||System.Text.RegularExpressions.Regex.IsMatch(d, @".jpg"))
                 {
                     temp.filePath = d;
                     temp.name = System.IO.Path.GetFileName(d);

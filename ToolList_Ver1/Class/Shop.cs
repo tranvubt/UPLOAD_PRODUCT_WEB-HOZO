@@ -1,18 +1,16 @@
 ﻿using OpenQA.Selenium;
-using OpenQA.Selenium.Support.UI;
 using System.Collections.Generic;
 using System;
 using OpenQA.Selenium.Firefox;
 using System.Drawing;
-using ToolList_Ver1.Extension;
 using System.Threading;
+using System.Windows.Forms;
 
 namespace ToolList_Ver1.Class
 {
     class Shop
     {
         public string Name_Profile { get; set; }
-        public string Loai_SanPham { set; get; }
         public string Date_Creat { get; set; }
         public string Email { set; get; }
         public string Link { set; get; }
@@ -27,19 +25,6 @@ namespace ToolList_Ver1.Class
         public void setSanPham(sanPham t)
         {
             this.SanPham = t;
-            this.Loai_SanPham = t.idSanPham;
-        }
-        //Random tên shop
-        private string randomNameShop(int n)
-        {
-            string chars = "abcdefghijklmnopqrstuvwxyz01234567890";
-            char[] stringChars = new char[n];
-            Random rd = new Random();
-            for (int i = 0; i < stringChars.Length; i++)
-            {
-                stringChars[i] = chars[rd.Next(chars.Length)];
-            }
-            return new string(stringChars) + "Design";
         }
         //Tạo driver
         private IWebDriver createDriver(string filePath)
@@ -48,73 +33,61 @@ namespace ToolList_Ver1.Class
             profile.SetPreference("intl.accept_languages", "us");
             FirefoxOptions options = new FirefoxOptions();
             options.Profile = profile;
-            options.AddArguments("disable-infobars");
+            options.AddArgument("disable-infobars");
             options.AddArguments("--no-sandbox");
             options.AddArguments("--disable-application-cache");
             options.AddArguments("--disable-gpu");
             options.AddArguments("--disable-dev-shm-usage");
             options.AddArguments("--disable-extensions");
+            options.SetPreference("dom.webdriver.enabled", false);
+            options.SetPreference("webdriver_enable_native_events", false);
+            options.SetPreference("webdriver_assume_untrusted_issuer", false);
+            options.SetPreference("media.peerconnection.enabled", false);
+            options.SetPreference("media.navigator.permission.disabled", true);
             //Ẩn trình duyệt
             //options.AddArguments("--headless");
             var driverService = FirefoxDriverService.CreateDefaultService();
             driverService.HideCommandPromptWindow = true;
             FirefoxDriver driver = new FirefoxDriver(driverService, options, TimeSpan.FromMinutes(2));
-            driver.Manage().Window.Size = new Size(350, 650);
+            driver.Manage().Window.Size = new Size(665,495);
             return driver;
         }
 
-        public ThreadStart createShop(List<image> lstImageCheck)
+        public ThreadStart createShop(List<string> LogSPDaList)
         {
             return delegate
             {
-                IWebDriver driver = createDriver(this.filePathProfile);
-                IJavaScriptExecutor js = (IJavaScriptExecutor)driver;
-                switch (Form1.mucDich)
+                if (!Status.Split('|')[0].Equals("") && !Status.Split('|')[0].Equals(SanPham.idSanPham))
                 {
-                    case true:                        
-                        this.SanPham.listting(driver, getImageList(lstImageCheck));
-                        break;
-                    case false:
-                        this.SanPham.listting(driver, getImageList(lstImageCheck));
-                        Form1.Log(Name_Profile, "Listed");
-                        this.Status = "Listed";
-                        Form1.updateStatus(idDgv, Status);
-                        break;
+                    DialogResult res = MessageBox.Show(Status.Split('|')[0]+ " chưa được list xong, bạn muốn list sản phẩm khác?", "Cảnh Báo!", MessageBoxButtons.OKCancel, MessageBoxIcon.Information);
+                    if (res == DialogResult.OK)
+                    {
+                        Status = SanPham.idSanPham + "||";
+                        Form1.Log(Name_Profile, Status);
+                        Form1.updateStatus(idDgv,"", SanPham.idSanPham, "");
+                    }
+                    if (res == DialogResult.Cancel)
+                    {
+                        Form1.enabledView();
+                        return;
+                    }
                 }
+                IWebDriver driver = createDriver(this.filePathProfile);
+                try
+                {
+                    Form1.updateStatus(idDgv, "", SanPham.idSanPham, "");
+                    this.SanPham.listting(driver, Status, Name_Profile, idDgv, LogSPDaList);
+                }
+                catch (Exception )
+                {
+                    Status = Form1.getLog(this.Name_Profile);
+                    this.SanPham.listting(driver, Status, Name_Profile, idDgv, LogSPDaList);
+                }                
+                Form1.Log(Name_Profile, "||");
+                Form1.updateStatus(idDgv, "", "Ready", "Ready");
                 driver.Quit();
                 driver.Dispose();
             };
-        }
-        private image getImageList(List<image> lstImageCheck)
-        {
-            image image = null;
-            if (Status != "Ready" && Status != "Listed")
-            {
-                image = new image(Status);
-            }
-            else if (Status.Equals("Ready"))
-            {
-                foreach (WTM item in SanPham.lstWTM)
-                {
-                    if (item.lstImage.Count > 0 && item.data != null)
-                    {
-                        foreach (image a in item.lstImage)
-                        {
-                            if (!lstImageCheck.Contains(a))
-                            {
-                                Form1.Log(Name_Profile, a.name);
-                                image = a;
-                                Status = a.name;
-                                Form1.updateStatus(idDgv, Status);
-                                lstImageCheck.Add(a);
-                                break;
-                            }
-                        }
-                        break;
-                    }
-                }
-            }
-            return image;
         }
         public Shop(string filePathProfile, string nameProfile)
         {

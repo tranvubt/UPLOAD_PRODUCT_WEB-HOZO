@@ -7,25 +7,14 @@ using ClosedXML.Excel;
 using System.ComponentModel;
 using ToolList_Ver1.Class;
 using System.Configuration;
+using System.Linq;
+using System.Text;
 
 namespace ToolList_Ver1
 {
     public partial class Form1 : Form
     {
         private static Form1 form = null;
-        public Form1()
-        {
-            InitializeComponent();
-            form = this;
-            getDataWTM();
-            getProfile();
-        }        
-        //Giá listing
-        public static string price;
-        //Quantity listing
-        public static string quantity;
-        public static bool mucDich=true; 
-        public static bool dangList=false;
         //List Shop có trong máy
         private BindingList<Shop> lstShop = new BindingList<Shop>();
         //List Sản phẩm được chọn 
@@ -33,13 +22,27 @@ namespace ToolList_Ver1
         //List data của từng WTM trong từng loại sản phẩm
         System.Collections.SortedList listDataWTM = new System.Collections.SortedList();
         BindingSource DataWTMgSource1 = new BindingSource();
-        List<image> lstImageRun = new List<image>();
         private int maxThread = 1;
+        private List<string> LogSPDaList = new List<string>();
+        public static int countTag;
+        public static int countWTM;
+        private DateTime today = DateTime.Today;
+        public static string linkWeb = "https://hozomarket.com/dashboard/new-product/";
+        public static bool listWeb = false;
+
+        public Form1()
+        {
+            InitializeComponent();
+            form = this;            
+        }       
+
         //Lấy profile trong máy
         private void getProfile()
         {
             try
             {
+                if(!string.IsNullOrEmpty(getLog("LogItemList")))
+                    LogSPDaList = getLog("LogItemList").Split(',').ToList();
                 foreach (string d in Directory.GetDirectories(Environment.ExpandEnvironmentVariables("%APPDATA%") + @"\Mozilla\Firefox\Profiles"))
                 {
                     string a = Path.GetFileName(d).Split('.')[1];
@@ -48,14 +51,14 @@ namespace ToolList_Ver1
                     {
                         temp.Status = getLog(a);
                         lstShop.Add(temp);
-                        dtgvData.Rows.Add(temp.Name_Profile, "", temp.Status);
+                        dtgvData.Rows.Add(temp.Name_Profile,temp.Status.Split('|')[0],temp.Status.Split('|')[2]);
                     }
                     else
                     {
-                        Log(a,"Ready");
-                        temp.Status = "Ready";
+                        Log(a, "||");
+                        temp.Status = "||";
                         lstShop.Add(temp);
-                        dtgvData.Rows.Add(temp.Name_Profile, "", temp.Status);
+                        dtgvData.Rows.Add(temp.Name_Profile, "", "");
                     }                      
                 }
             }
@@ -63,10 +66,17 @@ namespace ToolList_Ver1
             {
             }
         }
+
         //Tự load dataWTM 
         private void getDataWTM()
         {
-            string filePath = @".\.\Data";
+            string filePath = @".\.\Data"; 
+            string date = today.ToString("dd/MM/yyy");            
+            if (!date.Equals(getLog("LogRun")))
+            {
+                Log("LogRun", date);
+                logErr("======================" + date + "======================");
+            }
             getTitleandTag(filePath);
         }
 
@@ -88,12 +98,11 @@ namespace ToolList_Ver1
                 dtgvDataWTM.Columns[3].AutoSizeMode = DataGridViewAutoSizeColumnMode.DisplayedCells;
             }
         }
+
         //Load File excel ra BindingSource và đối tượng
         public void GetBindingSourceExcel(string strFileName)
         {
             string pathXlm = strFileName + @"\dataWTM.xlsx";
-            string DescapSVG = File.ReadAllText(strFileName+@"\SVG.txt");
-            string DescapPNG = File.ReadAllText(strFileName + @"\PNG.txt");
             try
             {
                 XLWorkbook workbook = new XLWorkbook(pathXlm);
@@ -101,15 +110,16 @@ namespace ToolList_Ver1
                 foreach (var row in rows)
                 {
                     List<string> temp = new List<string>();
-                    DataWTM t;
+                    DataWTM t = new DataWTM();
                     foreach (IXLCell item in row.Cells())
                     {
-                        temp.Add(item.Value.ToString());
-                    }                                       
-                    if(temp[0].ToUpper().Contains("PNG"))
-                        t = new DataWTM(temp[0], temp[1], DescapPNG, temp[2]);
+                        if(!item.IsEmpty())
+                            temp.Add(item.Value.ToString());
+                    }
+                    if(temp.Count ==7)
+                        t = new DataWTM(temp[0], temp[1], temp[2], temp[3], temp[4],temp[5], temp[6]);
                     else
-                        t= new DataWTM(temp[0], temp[1], DescapSVG, temp[2]);
+                        t = new DataWTM(temp[0], temp[1], temp[2], temp[3], "", temp[4], temp[5]);
                     if (!listDataWTM.ContainsKey(temp[0]))
                         listDataWTM.Add(temp[0], t);
                     if (!DataWTMgSource1.Contains(t))
@@ -120,6 +130,7 @@ namespace ToolList_Ver1
             {
             }
         }
+
         //Button get profile
         private void button3_Click(object sender, EventArgs e)
         {
@@ -128,6 +139,7 @@ namespace ToolList_Ver1
             lstShop.Clear();
             getProfile();
         }
+
         //Button xoá profile
         private void button6_Click(object sender, EventArgs e)
         {
@@ -153,6 +165,7 @@ namespace ToolList_Ver1
                 lstShop.Remove(item);
             }
         }
+
         //Button get danh sách sản phẩm 
         private void loadWTM_Click(object sender, EventArgs e)
         {
@@ -173,41 +186,40 @@ namespace ToolList_Ver1
                     sanPham temp = new sanPham();
                     temp.filePath = d;
                     temp.idSanPham = Path.GetFileName(d);
-                    //đếm file trong thư mục
-                    //temp.wtmCount= Directory.GetDirectories(d, "*.*", SearchOption.AllDirectories).Length;
                     ListSanPham.Add(temp);
                 }
             }
             catch (Exception)
             {
-            }
+            }            
+            addSanPhamToCombo();
+        }
+
+        //Thêm danh sách sản phẩm vào comobox trên dtgv danh sách shop
+        private void addSanPhamToCombo()
+        {
             int i = 0;
             foreach (sanPham item in ListSanPham)
             {
                 item.getListWTM(listDataWTM);
                 this.dtgvWtm.Rows.Add(item.idSanPham);
                 this.dtgvWtm.Rows[i].Cells[1].Value = Directory.GetDirectories(item.filePath).Length;
-                i++;
-            }
-            addSanPhamToCombo();
-        }
-        //Thêm danh sách sản phẩm vào comobox trên dtgv danh sách shop
-        private void addSanPhamToCombo()
-        {
-            foreach (sanPham item in ListSanPham)
-            {
                 ((DataGridViewComboBoxColumn)dtgvData.Columns["Column4"]).Items.Add(item);
+                i++;
             }
             ((DataGridViewComboBoxColumn)dtgvData.Columns["Column4"]).DisplayMember = "idSanPham";
             ((DataGridViewComboBoxColumn)dtgvData.Columns["Column4"]).ValueMember = "Temp";
         }
+
         //Button Starts
         private void btnStart_Click(object sender, EventArgs e)
         {
-            this.trackBar1.Enabled = false;
-            this.btnStart.Enabled = false;
+            disnabledView();
+            countTag = (int)nbDowSlTag.Value == 0 ? 1 : (int)nbDowSlTag.Value;
+            countWTM = (int)nbDownSlanh.Value == 0 ? 1 : (int)nbDownSlanh.Value;
             backgroundWorker1.RunWorkerAsync();
         }
+
         //trackBar điều chỉnh số lượng thread
         private void trackBar1_Scroll(object sender, EventArgs e)
         {
@@ -242,7 +254,7 @@ namespace ToolList_Ver1
                     {
                         break;
                     }
-                    Thread sub = new Thread(lstShopRun[autodem].createShop(lstImageRun));
+                    Thread sub = new Thread(lstShopRun[autodem].createShop(LogSPDaList));
                     sub.IsBackground = true;
                     sub.Start();
                     lThreads.Add(sub);
@@ -254,12 +266,26 @@ namespace ToolList_Ver1
                 }
                 lThreads.Clear();
             }
-            Invoke(new MethodInvoker(delegate ()
+            Log("LogItemList", "");
+            enabledView();
+        }
+
+        public static void disnabledView()
+        {
+            form.Invoke(new MethodInvoker(delegate ()
             {
-                this.btnStart.Enabled = true;
-                this.trackBar1.Enabled = true;
+                form.tableLayoutPanel11.Enabled = false;
             }));
         }
+
+        public static void enabledView()
+        {
+            form.Invoke(new MethodInvoker(delegate ()
+            {
+                form.tableLayoutPanel11.Enabled = true;
+            }));
+        }
+
         //Chọn sản phẩm list cho từng Shop
         private void dtgvData_EditingControlShowing(object sender, DataGridViewEditingControlShowingEventArgs e)
         {
@@ -270,44 +296,34 @@ namespace ToolList_Ver1
                 combo.SelectedIndexChanged += new EventHandler(ComboBox_SelectedIndexChanged);
             }
         }
+
         private void ComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
             var comboBox = (DataGridViewComboBoxEditingControl)sender;
             lstShop[comboBox.EditingControlRowIndex].setSanPham((sanPham)comboBox.Items[comboBox.SelectedIndex]);
             dtgvData.Update();
         }
+
+        //Ghi log vào config
         public static void Log(string keyLog, string logMessage)
         {
-            Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
-            config.AppSettings.Settings.Remove(keyLog);
-            config.AppSettings.Settings.Add(keyLog, logMessage);
-            config.Save(ConfigurationSaveMode.Minimal);
+            object syncObj = new object();
+            lock (syncObj)
+            {
+                Configuration config = ConfigurationManager.OpenExeConfiguration(ConfigurationUserLevel.None);
+                config.AppSettings.Settings.Remove(keyLog);
+                config.AppSettings.Settings.Add(keyLog, logMessage);
+                config.Save(ConfigurationSaveMode.Minimal);
+            }            
         }
-        private string getLog(string keyLog)
+
+        //Get log từ config
+        public static string getLog(string keyLog)
         {
             return (string)ConfigurationManager.AppSettings[keyLog];
         }
 
-        private void rdListDigital_CheckedChanged(object sender, EventArgs e)
-        {
-            RadioButton radio = sender as RadioButton;
-            if (radio.Checked)
-                if (radio.Name.Equals("rdListDigital"))
-                    dangList = true;
-                else
-                    dangList = false;
-        }
-        
-
-        private void rdQuangCao_CheckedChanged(object sender, EventArgs e)
-        {
-            RadioButton radio = sender as RadioButton;
-            if (radio.Checked)
-                if (radio.Name.Equals("rdQuangCao"))
-                    mucDich = true;
-                else
-                    mucDich = false;
-        }
+        //Cập nhập trạng thái trên dtgv
         private void UpdateDgv(int id, string u, string f, string l)
         {
             base.BeginInvoke(new MethodInvoker(delegate
@@ -329,15 +345,101 @@ namespace ToolList_Ver1
                 }
             }));
         }
-        public static void updateStatus(int id , string h)
+
+        public static void updateStatus(int id , string h, string k, string v)
         {
             if (form != null)
-                form.UpdateDgv(id, "", "", h);
+                form.UpdateDgv(id, h, k, v);
         }
 
         private void dtgvData_DataError(object sender, DataGridViewDataErrorEventArgs e)
         {
             e.Cancel = true;
+        }        
+
+        //btn find data
+        private void button5_Click(object sender, EventArgs e)
+        {
+            foreach (DataGridViewRow row in dtgvDataWTM.Rows)
+            {
+                try
+                {
+                    if (row.Cells[0].Value.Equals(txtFindData.Text))
+                    {
+                        row.Selected = true;
+                        dtgvDataWTM.FirstDisplayedScrollingRowIndex = row.Index;
+                        break;
+                    }
+                }
+                catch (Exception)
+                {
+                }
+
+            }
+        }
+
+        //ghi file log txt
+        public static void logErr(string log)
+        {
+            object syncObj = new object();
+            lock (syncObj)
+            {
+                StringBuilder sb = new StringBuilder();
+                sb.Append(log + "\n");
+                File.AppendAllText(@".\.\Data\logError.txt", sb.ToString());
+                sb.Clear();
+            }            
+        }
+
+        //Kill geckodriver
+        private void killGecko()
+        {
+            System.Diagnostics.Process process = new System.Diagnostics.Process();
+            System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo("Process.exe");
+            startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
+            startInfo.FileName = "cmd.exe";
+            startInfo.Arguments = "taskkill / F / IM geckodriver.exe";
+            process.StartInfo = startInfo;
+            process.Start();
+        }
+
+        private void Form1_Load_1(object sender, EventArgs e)
+        {
+            getDataWTM();
+            getProfile();
+            killGecko();
+        }
+
+        private void rdHozomarket_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rdHozomarket.Checked)
+                linkWeb = "https://hozomarket.com/dashboard/new-product/";
+        }
+
+        private void rdVectorency_CheckedChanged(object sender, EventArgs e)
+        {
+            if(rdVectorency.Checked)
+                linkWeb = "https://vectorency.com/dashboard/new-product/";
+        }
+
+        private void radioButton1_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rdWebkhac.Checked)
+            {
+                txtLinkWeb.Visible = true;
+                linkWeb = txtLinkWeb.Text;
+                listWeb = true;
+            }
+            else
+            {
+                txtLinkWeb.Visible = false;
+                listWeb = false;
+            }                
+        }
+
+        private void txtLinkWeb_TextChanged(object sender, EventArgs e)
+        {
+            linkWeb = txtLinkWeb.Text;
         }
     }
 }
