@@ -14,7 +14,7 @@ namespace ToolList_Ver1.Class
         {
             foreach (System.Collections.DictionaryEntry item in h)
             {
-                if (item.Key.ToString().ToLower().Contains(FileCode.ToLower()))
+                if (item.Key.ToString().ToLower().Equals(FileCode.ToLower()))
                 {
                     data = (DataWTM)item.Value;
                     this.FileCode = item.Key.ToString();
@@ -27,7 +27,7 @@ namespace ToolList_Ver1.Class
             foreach (string d in System.IO.Directory.GetFiles(filePath))
             {
                 image temp = new image();
-                if (System.Text.RegularExpressions.Regex.IsMatch(d, @".png")||System.Text.RegularExpressions.Regex.IsMatch(d, @".jpg"))
+                if (System.Text.RegularExpressions.Regex.IsMatch(d.ToLower(), @".png")||System.Text.RegularExpressions.Regex.IsMatch(d.ToLower(), @".jpg") || System.Text.RegularExpressions.Regex.IsMatch(d.ToLower(), @".jpeg"))
                 {
                     temp.filePath = d;
                     temp.name = System.IO.Path.GetFileName(d);

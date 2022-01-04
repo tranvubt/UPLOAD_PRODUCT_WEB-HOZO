@@ -33,7 +33,6 @@ namespace ToolList_Ver1.Class
             profile.SetPreference("intl.accept_languages", "us");
             FirefoxOptions options = new FirefoxOptions();
             options.Profile = profile;
-            options.AddArgument("disable-infobars");
             options.AddArguments("--no-sandbox");
             options.AddArguments("--disable-application-cache");
             options.AddArguments("--disable-gpu");
@@ -49,7 +48,8 @@ namespace ToolList_Ver1.Class
             var driverService = FirefoxDriverService.CreateDefaultService();
             driverService.HideCommandPromptWindow = true;
             FirefoxDriver driver = new FirefoxDriver(driverService, options, TimeSpan.FromMinutes(2));
-            driver.Manage().Window.Size = new Size(665,495);
+            driver.Manage().Window.Size = new Size(900,500);
+            driver.Manage().Timeouts().PageLoad = TimeSpan.FromMinutes(5);
             return driver;
         }
 
@@ -57,6 +57,8 @@ namespace ToolList_Ver1.Class
         {
             return delegate
             {
+                if (SanPham == null)
+                    return;
                 if (!Status.Split('|')[0].Equals("") && !Status.Split('|')[0].Equals(SanPham.idSanPham))
                 {
                     DialogResult res = MessageBox.Show(Status.Split('|')[0]+ " chưa được list xong, bạn muốn list sản phẩm khác?", "Cảnh Báo!", MessageBoxButtons.OKCancel, MessageBoxIcon.Information);

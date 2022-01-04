@@ -27,8 +27,9 @@ namespace ToolList_Ver1
         public static int countTag;
         public static int countWTM;
         private DateTime today = DateTime.Today;
-        public static string linkWeb = "https://hozomarket.com/dashboard/new-product/";
+        public static string linkWeb = "https://bqsmarket.com/dashboard/new-product/";
         public static bool listWeb = false;
+        public static bool listShopyfi = false;
 
         public Form1()
         {
@@ -398,7 +399,7 @@ namespace ToolList_Ver1
             System.Diagnostics.ProcessStartInfo startInfo = new System.Diagnostics.ProcessStartInfo("Process.exe");
             startInfo.WindowStyle = System.Diagnostics.ProcessWindowStyle.Hidden;
             startInfo.FileName = "cmd.exe";
-            startInfo.Arguments = "taskkill / F / IM geckodriver.exe";
+            startInfo.Arguments = "taskkill /F /IM geckodriver.exe";
             process.StartInfo = startInfo;
             process.Start();
         }
@@ -412,8 +413,8 @@ namespace ToolList_Ver1
 
         private void rdHozomarket_CheckedChanged(object sender, EventArgs e)
         {
-            if (rdHozomarket.Checked)
-                linkWeb = "https://hozomarket.com/dashboard/new-product/";
+            if (rdBqsmarket.Checked)
+                linkWeb = "https://bqsmarket.com/dashboard/new-product/";
         }
 
         private void rdVectorency_CheckedChanged(object sender, EventArgs e)
@@ -426,13 +427,13 @@ namespace ToolList_Ver1
         {
             if (rdWebkhac.Checked)
             {
-                txtLinkWeb.Visible = true;
+                txtLinkWeb.Enabled = true;
                 linkWeb = txtLinkWeb.Text;
                 listWeb = true;
             }
             else
             {
-                txtLinkWeb.Visible = false;
+                txtLinkWeb.Enabled = false;
                 listWeb = false;
             }                
         }
@@ -440,6 +441,28 @@ namespace ToolList_Ver1
         private void txtLinkWeb_TextChanged(object sender, EventArgs e)
         {
             linkWeb = txtLinkWeb.Text;
+        }
+
+        private void rdShopify_CheckedChanged(object sender, EventArgs e)
+        {
+            if (rdShopify.Checked)
+            {
+                txtLinkShopify.Enabled = true;
+                linkWeb = txtLinkShopify.Text;
+                listShopyfi = true;
+                listWeb = true;
+            }
+            else
+            {
+                txtLinkShopify.Enabled = false;
+                listShopyfi = false;
+                listWeb = false;
+            }
+        }
+
+        private void txtLinkShopify_TextChanged(object sender, EventArgs e)
+        {
+            linkWeb = txtLinkShopify.Text;
         }
     }
 }
